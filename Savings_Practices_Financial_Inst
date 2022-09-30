@@ -1,0 +1,44 @@
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from scipy import stats
+import scipy
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+from statsmodels.stats.multicomp import MultiComparison
+
+#Import file
+df3 = pd.read_csv("C:/Users/User/Desktop/Intermediate_stat/savings.csv")
+df3.head()
+
+#Data Wrangling
+df3_expanded=pd.melt(df3,var_name='Group', value_name='$')
+df3_expanded
+df4_expanded = df3_expanded.replace(df3.columns, [0,1,2,3])
+df4_expanded.head()
+
+#Test Assumptions
+#normality
+sns.distplot(df3.values[~np.isnan(df3.values)])
+##almost normal no need for transformation
+#Homogeneity of Variance
+scipy.stats.bartlett(df4_expanded['$'], df4_expanded['Group'])
+##p-value<0.05  unfortunately, wehave violated the assumption of homogeneity of variance.
+#sample size
+#we have 232 entries per IV > 20 so this assumption is met
+
+#Drop NA values
+df3_expanded.dropna(inplace=True)
+
+#Run the analysis
+stats.f_oneway(df3_expanded['$'][df3_expanded['Group']=='Group A'],
+                    df3_expanded['$'][df3_expanded['Group']=='Group B'],
+                    df3_expanded['$'][df3_expanded['Group']=='Group C'],
+              df3_expanded['$'][df3_expanded['Group']=='Group D']
+##p-value<0.05 there is a significant difference in price somewhere between the four levels of the independent variable    
+
+postHoc = MultiComparison(df3_expanded['$'], df3_expanded['Group'])
+postHocResults = postHoc.tukeyhsd()
+print(postHocResults)
+#the pairwise comparison between all groups are significant
+#conclusion: the four demographics groups make different savings
+             
